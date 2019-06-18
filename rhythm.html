@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="beets"></div>
+    <hero></hero>
+    <enemy></enemy>
+    <bg class="bg1"></bg>
+    <bg class="bg2"></bg>
+
+    </bg>
+    <style>
+        hero {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            display: inline-block;
+            width: 300px;
+            height: 150px;
+            transform-origin: 15% 0;
+            background-image: url(./hero.png);
+            background-position-x: -55px;
+            background-position-y: -20px;
+        }
+        enemy {
+            position: fixed;
+            bottom: 20px;
+            left: 500px;
+            display: inline-block;
+            width: 33px;
+            height: 65px;
+            transform-origin: 50% 0;
+            background-image: url(./enemy.png);
+            background-position-x: -0px;
+            background-position-y: -75px;
+        }
+        bg {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0
+        }
+        .bg1 {
+            background-image: url(./bg1.png);
+            background-size: 100% 100%;
+            z-index: -110;
+        }
+        .bg2 {
+            background-image: url(./bg2.png);
+            background-size: 100% 100%;
+            z-index: 0;
+        }
+
+        body,
+        html {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+        }
+
+        body {
+            background-image: url(./bg.jpg);
+            background-size: 100% 100%;
+        }
+
+        .beets {
+            width: 100px;
+            height: 100px;
+            background-color: skyblue;
+        }
+
+        .beets.go {
+            animation: beets 1s infinite;
+        }
+
+        @keyframes beets {
+            from {
+                width: 100px;
+            }
+
+            50% {
+                width: 150px;
+            }
+
+            to {
+                width: 100px;
+            }
+        }
+    </style>
+    <script>
+        let heroInter;
+        let enemyInter;
+        let heroState;
+        let heroIsheroJump;
+        let heroAttachX = 200;
+        const limitX = [0, window.screen.width];
+        const limitY = [0, window.screen.height * .2];
+        const heroYShift = 20;
+        const enemyXShift = 0;
+        const heroStep = 1;
+        const heroXDlt = 30;
+        const heroYDlt = 20;
+        function heroFight() {
+            let d = -4;
+            const _state = 'heroFight';
+            if (heroState === _state) {
+                return;
+            } else {
+                heroState = _state;
+            }
+            clearInterval(heroInter);
+            heroInter = setInterval(() => {
+                document.querySelector('hero').style.backgroundPositionY = ((d-- * 192) - heroYShift) + 'px';
+                if (Math.abs(d) > 18) {
+                    heroStand();
+                }
+            }, 66)
+        }
+        function heroStand() {
+            let d = 0;
+            const _state = 'heroStand';
+            if (heroState === _state) {
+                return;
+            } else {
+                heroState = _state;
+            }
+            clearInterval(heroInter);
+            heroInter = setInterval(() => {
+                document.querySelector('hero').style.backgroundPositionY = ((d-- * 192 % (192 * 4)) - heroYShift) + 'px'
+            }, 200)
+        }
+        function enemyMove() {
+            let d = 0;
+            clearInterval(enemyInter);
+            enemyInter = setInterval(() => {
+                document.querySelector('enemy').style.backgroundPositionX = ((d-- * 36 % (36 * 6)) - enemyXShift) + 'px'
+            }, 200)
+        }
+        function enemyMoveAct(x,y){
+            let enemyDom = document.querySelector('enemy');
+            let left = Number(enemyDom.style.left.replace('px', '')) || 0;
+            let bottom = Number(enemyDom.style.bottom.replace('px', '')) || 0;
+            left += x;
+            bottom += y;
+            if (x < 0) {
+                enemyDom.style.transform = 'rotateY(180deg)';
+            } else {
+                enemyDom.style.transform = 'rotateY(0deg)';
+            }
+            if (left < limitX[0]) left = limitX[0];
+            if (left > limitX[1]) left = limitX[1];
+            if (bottom < limitY[0]) bottom = limitY[0];
+            if (bottom > limitY[1]) bottom = limitY[1];
+            enemyDom.style.left = left + 'px';
+            enemyDom.style.bottom = bottom + 'px';
+            enemyDom.style.zIndex = -bottom;
+        }
+        function heroJump() {
+            if (heroIsheroJump) return;
+            heroIsheroJump = true;
+            const downA = 10;
+            const upV = 200;
+            let v = upV;
+            let tInter = 20;
+            let _y = 0;
+            let heroheroJumpInter = setInterval(()=>{
+                let _yd = v * tInter / 1000;
+                v -= downA * tInter * 100 / 1000;
+                _y  += _yd;
+                if (_y >= 0) {
+                    // 跳跳跳
+                    let heroDom = document.querySelector('hero');
+                    let heroY = heroDom.style.bottom.toString().replace('px', '');
+                    heroY = Number(heroY) || 0;
+                    heroY += _yd;
+                    heroDom.style.bottom = heroY + 'px';
+                } else {
+                    // 复位
+                    let heroDom = document.querySelector('hero');
+                    let heroY = heroDom.style.bottom.toString().replace('px', '');
+                    heroY = Number(heroY) || 0;
+                    heroY += _yd - _y;
+                    heroDom.style.bottom = heroY + 'px';
+                    clearInterval(heroheroJumpInter);
+                    heroIsheroJump = false;
+                }
+            }, tInter)
+        }
+        window.onload = function () {
+            let c = 0;
+            heroStand()
+            enemyMove()
+            let x = 0;
+            setInterval(()=>{
+                if (Math.random() > .8) {
+                    x += Math.random() > .5 ? 1: -1;
+                    enemyMoveAct(x,x)
+                }
+            }, 100)
+            // let inter = setInterval(() => {
+            //     let ts = new Date().getTime();
+            //     console.log(++c, ts % 1000);
+            //     if (ts % 1000 == 0) {
+            //         console.log(document.querySelector('.beets').className = 'beets go');
+            //         clearInterval(inter);
+            //     }
+            // }, 1)
+            let keyDic = {};
+            window.document.addEventListener('keydown', (ev) => {
+                let key = ev.key;
+                keyDic[key] = true;
+                console.log(keyDic);
+            });
+            window.document.addEventListener('keyup', (ev) => {
+                let key = ev.key;
+                delete keyDic[key];
+            });
+
+            setInterval(() => {
+                for (let i in keyDic) {
+                    let key = i;
+                    console.log(key);
+                    if (key === 'j') {
+                        heroFight();
+                    }
+                    if (key === ' ') {
+                        heroJump();
+                        // let ts = new Date().getTime();
+                        // console.log(ts % 500);
+                        // if (ts % 500 < 50) {
+                        //     console.log('Perfect');
+                        // } else if (ts % 500 < 200) {
+                        //     console.log('Good');
+                        // } else {
+                        //     console.log('miss');
+                        // }
+                    }
+                    if (key === 'a') {
+                        let heroDom = document.querySelector('hero');
+                        let heroX = heroDom.style.left.toString().replace('px', '');
+                        heroX = (Number(heroX) || 0) + heroXDlt;
+                        heroX -= heroStep;
+                        if (heroX < limitX[0]) return;
+                        heroDom.style.left = (heroX - heroXDlt) + 'px';
+                        heroDom.style.transform = 'rotateY(180deg)';
+                    }
+                    if (key === 'w') {
+                        let heroDom = document.querySelector('hero');
+                        let heroY = heroDom.style.bottom.toString().replace('px', '');
+                        heroY = (Number(heroY) || 0) + heroYDlt;
+                        heroY += heroStep;
+                        if (heroY > limitY[1]) return;
+                        heroDom.style.bottom = (heroY - heroYDlt) + 'px';
+                        heroDom.style.zIndex = -(heroY);
+                    }
+                    if (key === 'd') {
+                        let heroDom = document.querySelector('hero');
+                        let heroX = heroDom.style.left.toString().replace('px', '');
+                        heroX = (Number(heroX) || 0) + heroXDlt;
+                        heroX += heroStep;
+                        if (heroX > limitX[1]) return;
+                        heroDom.style.left = (heroX - heroXDlt) + 'px';
+                        heroDom.style.transform = 'rotateY(0deg)';
+                    }
+                    if (key === 's') {
+                        let heroDom = document.querySelector('hero');
+                        let heroY = heroDom.style.bottom.toString().replace('px', '');
+                        heroY = (Number(heroY) || 0) + heroYDlt;
+                        heroY -= heroStep;
+                        if (heroY < limitY[0]) return;
+                        heroDom.style.bottom = (heroY - heroYDlt) + 'px';
+                        heroDom.style.zIndex = -(heroY);
+                    }
+                }
+            }, 25)
+        }
+    </script>
+</body>
+
+</html>
