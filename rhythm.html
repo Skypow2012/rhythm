@@ -11,6 +11,7 @@
 <body>
     <div class="beets"></div>
     <hero></hero>
+    <audio id="hero-fight-wav" src="./wav/heroFight.mp3"></audio>
     <enemy></enemy>
     <bg class="bg1"></bg>
     <bg class="bg2"></bg>
@@ -95,10 +96,14 @@
             display: inline-block;
             animation: blood-num-beets 1s infinite linear;
         }
+
         blood-num-box {
             position: fixed;
             display: inline-block;
-            animation: blood-num-rise 5s linear;
+            min-width: 100px;
+            text-align: center;
+            /* animation: blood-num-rise 5s linear; */
+            transition: 5s;
         }
 
         @keyframes beets {
@@ -114,6 +119,7 @@
                 width: 100px;
             }
         }
+
         @keyframes blood-num-beets {
             from {
                 margin-bottom: 0px;
@@ -122,6 +128,7 @@
             33% {
                 margin-bottom: 5px;
             }
+
             66% {
                 margin-bottom: 0px;
             }
@@ -130,6 +137,7 @@
                 margin-bottom: -5px;
             }
         }
+
         @keyframes blood-num-rise {
             from {
                 bottom: 0px;
@@ -144,6 +152,7 @@
         let heroInter;
         let enemyInter;
         let heroState;
+        let enemyState;
         let heroIsheroJump;
         let heroAttachX = 200;
         let isAttackDid = false;
@@ -152,34 +161,47 @@
         const heroYShift = 20;
         const enemyXShift = 0;
         const heroStep = 1;
+        const enemyStep = 1;
         const heroXDlt = 30;
         const heroYDlt = 20;
-        function createBloodNumberDom(num) {
+        function playHeroFightWav() {
+            let musicDom = document.getElementById('hero-fight-wav');
+            musicDom.playbackRate = 2;
+            musicDom.play();
+        }
+        function createBloodNumberDom(num, config={}) {
+            console.log(config);
             let bloodNumBox = document.createElement('blood-num-box');
             let bloodNumArr = [];
             while (num > 0) {
                 let n = num % 10;
                 let bloodNum = document.createElement('blood-num');
                 if (n >= 1 && n <= 5) {
-                    bloodNum.style.backgroundPositionX = (-n*38 + 34) + 'px';
+                    bloodNum.style.backgroundPositionX = (-n * 38 + 34) + 'px';
                     bloodNum.style.backgroundPositionY = -36 + 'px';
                 } else if (n === 0) {
-                    bloodNum.style.backgroundPositionX = (-(10 - 5)  * 38 +34) + 'px';
+                    bloodNum.style.backgroundPositionX = (-(10 - 5) * 38 + 34) + 'px';
                     bloodNum.style.backgroundPositionY = -88 + 'px';
                 } else {
-                    bloodNum.style.backgroundPositionX = (-(n-5)*38 + 34) + 'px';
+                    bloodNum.style.backgroundPositionX = (-(n - 5) * 38 + 34) + 'px';
                     bloodNum.style.backgroundPositionY = -88 + 'px';
                 }
                 bloodNum.style.animation = 'blood-num-beets ' + (.5 + Math.random()) + 's infinite linear';
                 bloodNumArr.push(bloodNum);
                 num = num / 10 | 0;
             }
-            for (let i = bloodNumArr.length-1; i >= 0; i--) {
+            for (let i = bloodNumArr.length - 1; i >= 0; i--) {
                 console.log(bloodNumArr[i])
                 bloodNumBox.appendChild(bloodNumArr[i]);
             }
             document.body.appendChild(bloodNumBox);
+            bloodNumBox.style.left = ((config.x || 0) - 50) + 'px';
+            bloodNumBox.style.bottom = (config.y || 0) + 'px';
+            
             setTimeout(()=>{
+                bloodNumBox.style.bottom = '1000px';
+            }, 500)
+            setTimeout(() => {
                 document.body.removeChild(bloodNumBox);
             }, 4000)
         }
@@ -192,6 +214,7 @@
                 heroState = _state;
             }
             clearInterval(heroInter);
+            playHeroFightWav();
             heroInter = setInterval(() => {
                 document.querySelector('hero').style.backgroundPositionY = ((d-- * 192) - heroYShift) + 'px';
                 if (Math.abs(d) > 18) {
@@ -215,10 +238,63 @@
         }
         function enemyMove() {
             let d = 0;
+            const _state = 'enemyMove';
+            if (enemyState === _state) {
+                return;
+            } else {
+                enemyState = _state;
+            }
             clearInterval(enemyInter);
+            document.querySelector('enemy').style.width = 33 + 'px';
+            document.querySelector('enemy').style.backgroundPositionY = (-75) + 'px';
+            document.querySelector('enemy').style.backgroundPositionX = ((d-- * 36 % (36 * 6)) - enemyXShift) + 'px';
             enemyInter = setInterval(() => {
-                document.querySelector('enemy').style.backgroundPositionX = ((d-- * 36 % (36 * 6)) - enemyXShift) + 'px'
+                document.querySelector('enemy').style.backgroundPositionX = ((d-- * 36 % (36 * 6)) - enemyXShift) + 'px';
             }, 200)
+        }
+        function getEnemyPos() {
+            let enemyDom = document.querySelector('enemy');
+            let left = Number(enemyDom.style.left.replace('px', '')) || 0;
+            let bottom = Number(enemyDom.style.bottom.replace('px', '')) || 0;
+            return {
+                x:left,
+                y:bottom
+            }
+        }
+        function enemyStand() {
+            let d = 0;
+            const _state = 'enemyStand';
+            if (enemyState === _state) {
+                return;
+            } else {
+                enemyState = _state;
+            }
+            clearInterval(enemyInter);
+            document.querySelector('enemy').style.width = 40 + 'px';
+            document.querySelector('enemy').style.backgroundPositionY = (-0) + 'px';
+            document.querySelector('enemy').style.backgroundPositionX = ((d-- * 44 % (44 * 4)) - enemyXShift) + 'px'
+            enemyInter = setInterval(() => {
+                document.querySelector('enemy').style.backgroundPositionX = ((d-- * 44 % (44 * 4)) - enemyXShift) + 'px'
+            }, 200)
+        }
+        function heroMoveAct(x, y) {
+            let heroDom = document.querySelector('hero');
+            let heroX = heroDom.style.left.toString().replace('px', '');
+            let heroY = heroDom.style.bottom.toString().replace('px', '');
+            heroX = (Number(heroX) || 0) + heroXDlt;
+            heroX += x;
+            heroY = (Number(heroY) || 0) + heroYDlt;
+            heroY += y;
+            if (heroY > limitY[1]) return;
+            if (heroX > limitX[1]) return;
+            heroDom.style.left = (heroX - heroXDlt) + 'px';
+            heroDom.style.bottom = (heroY - heroYDlt) + 'px';
+            heroDom.style.zIndex = -(heroY);
+            if (x > 0) {
+                heroDom.style.transform = 'rotateY(0deg)';
+            } else if (x < 0) {
+                heroDom.style.transform = 'rotateY(180deg)';
+            }
         }
         function enemyMoveAct(x, y) {
             let enemyDom = document.querySelector('enemy');
@@ -228,7 +304,7 @@
             bottom += y;
             if (x < 0) {
                 enemyDom.style.transform = 'rotateY(180deg)';
-            } else {
+            } else if (x > 0) {
                 enemyDom.style.transform = 'rotateY(0deg)';
             }
             if (left < limitX[0]) left = limitX[0];
@@ -275,12 +351,12 @@
             heroStand()
             enemyMove()
             let x = 0;
-            setInterval(() => {
-                if (Math.random() > .8) {
-                    x += Math.random() > .5 ? 1 : -1;
-                    enemyMoveAct(x, x)
-                }
-            }, 100)
+            // setInterval(() => {
+            //     if (Math.random() > .8) {
+            //         x += Math.random() > .5 ? 1 : -1;
+            //         enemyMoveAct(x, x)
+            //     }
+            // }, 100)
             // let inter = setInterval(() => {
             //     let ts = new Date().getTime();
             //     console.log(++c, ts % 1000);
@@ -300,6 +376,11 @@
                 delete keyDic[key];
             });
             setInterval(() => {
+                if (JSON.stringify(keyDic).indexOf('Arrow') === -1) {
+                    enemyStand();
+                } else {
+                    enemyMove();
+                }
                 for (let i in keyDic) {
                     let key = i;
                     console.log(key);
@@ -309,7 +390,8 @@
                         }
                         isAttackDid = true;
                         heroFight();
-                        createBloodNumberDom(200*Math.random()|0);
+                        let enemyPos = getEnemyPos();
+                        createBloodNumberDom(200 * Math.random() | 0, {x:enemyPos.x, y:enemyPos.y});
                     }
                     if (key === ' ') {
                         heroJump();
@@ -324,40 +406,28 @@
                         // }
                     }
                     if (key === 'a') {
-                        let heroDom = document.querySelector('hero');
-                        let heroX = heroDom.style.left.toString().replace('px', '');
-                        heroX = (Number(heroX) || 0) + heroXDlt;
-                        heroX -= heroStep;
-                        if (heroX < limitX[0]) return;
-                        heroDom.style.left = (heroX - heroXDlt) + 'px';
-                        heroDom.style.transform = 'rotateY(180deg)';
+                        heroMoveAct(-heroStep, 0);
                     }
                     if (key === 'w') {
-                        let heroDom = document.querySelector('hero');
-                        let heroY = heroDom.style.bottom.toString().replace('px', '');
-                        heroY = (Number(heroY) || 0) + heroYDlt;
-                        heroY += heroStep;
-                        if (heroY > limitY[1]) return;
-                        heroDom.style.bottom = (heroY - heroYDlt) + 'px';
-                        heroDom.style.zIndex = -(heroY);
+                        heroMoveAct(0, heroStep);
                     }
                     if (key === 'd') {
-                        let heroDom = document.querySelector('hero');
-                        let heroX = heroDom.style.left.toString().replace('px', '');
-                        heroX = (Number(heroX) || 0) + heroXDlt;
-                        heroX += heroStep;
-                        if (heroX > limitX[1]) return;
-                        heroDom.style.left = (heroX - heroXDlt) + 'px';
-                        heroDom.style.transform = 'rotateY(0deg)';
+                        heroMoveAct(heroStep, 0);
                     }
                     if (key === 's') {
-                        let heroDom = document.querySelector('hero');
-                        let heroY = heroDom.style.bottom.toString().replace('px', '');
-                        heroY = (Number(heroY) || 0) + heroYDlt;
-                        heroY -= heroStep;
-                        if (heroY < limitY[0]) return;
-                        heroDom.style.bottom = (heroY - heroYDlt) + 'px';
-                        heroDom.style.zIndex = -(heroY);
+                        heroMoveAct(0, -heroStep);
+                    }
+                    if (key === 'ArrowLeft') {
+                        enemyMoveAct(-enemyStep, 0);
+                    }
+                    if (key === 'ArrowUp') {
+                        enemyMoveAct(0, enemyStep);
+                    }
+                    if (key === 'ArrowRight') {
+                        enemyMoveAct(enemyStep, 0);
+                    }
+                    if (key === 'ArrowDown') {
+                        enemyMoveAct(0, -enemyStep);
                     }
                 }
             }, 25)
